@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+
+# testing / coverage
+coverage/
+
+# misc
+.DS_Store
+*.pem
+*.log
+*.tsbuildinfo
+
+# env files: this project needs none, but never commit one by accident.
+.env
+.env.*
+
+# the local Postgres (PGlite) files. `npm run db:reset` deletes them.
+/data/
+
+# Claude Code agent worktrees
+.claude/worktrees/

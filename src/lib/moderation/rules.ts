@@ -1,6 +1,13 @@
 import type { AppListing, PricingPlan } from "@/lib/fanvue/types";
 
 /**
+ * The revision of `docs/listing-requirements.md` these rules implement ("Revision 3,
+ * October 2026"). Bump it together with the rules when revision 4 lands, so every
+ * stored finding says which revision it was made under.
+ */
+export const RULE_REVISION = "3";
+
+/**
  * `reject`: the listing cannot go live as it is. `fix`: the developer can correct
  * it without anyone's judgement. `warn`: a person should look.
  */
@@ -45,12 +52,14 @@ export type Review = {
  *   someone tried to get past the filter (`reject`).
  * - 6.2: a host the developer cannot own (Fanvue's, a parked or site-builder
  *   placeholder, a bare IP) means there is no owned product to list (`reject`).
+ * - 2.3: too few screenshots is `warn`: a person looks before it blocks anything.
  * - 4.2: near-identical copy is `warn`, as "a person decides which one came first".
  *   Word-for-word identical copy (after ignoring case, punctuation and the app's
  *   name) is a template resubmission, so both are `reject`.
  */
 const SEVERITY = {
   draft_copy: "fix",
+  too_few_screenshots: "warn",
   empty_highlights: "fix",
   competitor_named: "fix",
   competitor_disguised: "reject",
@@ -234,16 +243,14 @@ function checkScreenshotCount(listing: AppListing): Issue[] {
   if (distinct >= 2) return [];
 
   return [
-    {
-      code: "too_few_screenshots",
-      rule: "2.3",
-      severity: "fix",
-      message:
-        distinct === listing.previewImageUrls.length
-          ? `Only ${distinct} screenshot${distinct === 1 ? "" : "s"}; rule 2.3 needs two.`
-          : `${listing.previewImageUrls.length} screenshots but only ${distinct} distinct; rule 2.3 needs two.`,
-      field: "previewImageUrls",
-    },
+    finding(
+      "too_few_screenshots",
+      "2.3",
+      distinct === listing.previewImageUrls.length
+        ? `Only ${distinct} screenshot${distinct === 1 ? "" : "s"}; rule 2.3 needs two.`
+        : `${listing.previewImageUrls.length} screenshots but only ${distinct} distinct; rule 2.3 needs two.`,
+      { field: "previewImageUrls" },
+    ),
   ];
 }
 

@@ -1,33 +1,46 @@
-import { notFound } from "next/navigation";
+import Link from "next/link";
 
 import { ListingDetail } from "@/components/ListingDetail";
-import { LIVE_RATE_LIMIT_PER_MINUTE } from "@/lib/fanvue/api";
-import { fetchEveryListing } from "@/lib/moderation/review-job";
-import { reviewListings } from "@/lib/moderation/rules";
+import { createReviewStore } from "@/lib/moderation/store";
 
 export const dynamic = "force-dynamic";
 
 /**
- * One listing, reviewed against the whole store on every request because
- * nothing has stored the result yet. The footer says what that cost.
- *
- * TODO (yours): read the stored review from `src/lib/moderation/store.ts`.
+ * One listing's stored review. No API calls: if the job has not stored this
+ * uuid, the page says so rather than fetching it.
  */
 export default async function ListingDetailPage({ params }: { params: Promise<{ uuid: string }> }) {
   const { uuid } = await params;
 
-  const { listings, apiCalls, ms } = await fetchEveryListing();
-  const review = reviewListings(listings).find(
-    (candidate) => candidate.listing.uuid.toLowerCase() === uuid.toLowerCase(),
-  );
-  if (!review) notFound();
+  const startedAt = performance.now();
+  const review = await createReviewStore().getReview(uuid.toLowerCase());
+  const ms = Math.round(performance.now() - startedAt);
+
+  if (!review) {
+    return (
+      <section className="flex flex-col gap-4 text-sm">
+        <Link href="/" className="underline">
+          Back to queue
+        </Link>
+        <h1 className="text-2xl font-semibold">Not reviewed yet</h1>
+        <p>
+          There is no stored review for <code>{uuid}</code>. Either the review job has not reached this listing yet, or
+          no listing has this id. It will appear here after the next <code>npm run review</code>.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <>
-      <ListingDetail listing={review.listing} issues={review.issues} />
+      <ListingDetail
+        listing={review.listing}
+        issues={review.issues}
+        ruleRevision={review.ruleRevision}
+        reviewedAt={review.reviewedAt}
+      />
       <p className="mt-6 text-xs text-neutral-500">
-        This page made {apiCalls.toLocaleString()} API calls, spending {ms.toLocaleString()} ms on them before rendering
-        anything, to review one listing. The live API allows {LIVE_RATE_LIMIT_PER_MINUTE} calls a minute.
+        Read from the review store in {ms.toLocaleString()} ms. This page made no API calls.
       </p>
     </>
   );

@@ -1,20 +1,29 @@
 import Link from "next/link";
 
 import type { AppListing } from "@/lib/fanvue/types";
+import { worstSeverity } from "@/lib/moderation/queue";
 import type { Issue } from "@/lib/moderation/rules";
 
 import { FindingsList } from "./FindingsList";
+import { SeverityBadge } from "./SeverityBadge";
 
 /**
- * One listing: a plain dump of the fields the rules work with.
- *
- * TODO (yours): put the findings where a moderator looks first, and highlight
- * the fields they point at.
+ * One listing: its stored findings first, then the fields the rules work with.
  */
-export function ListingDetail({ listing, issues }: { listing: AppListing; issues: Issue[] }) {
+export function ListingDetail({
+  listing,
+  issues,
+  ruleRevision,
+  reviewedAt,
+}: {
+  listing: AppListing;
+  issues: Issue[];
+  ruleRevision: string;
+  reviewedAt: string;
+}) {
+  const worst = worstSeverity(issues) ?? "none";
   return (
     <article className="flex flex-col gap-6 text-sm">
-      {/* TODO: keep the moderator's page, and filter if you add one, when going back. */}
       <Link href="/" className="underline">
         Back to queue
       </Link>
@@ -22,7 +31,9 @@ export function ListingDetail({ listing, issues }: { listing: AppListing; issues
       <header className="flex items-start gap-4">
         <img src={listing.logoUrl} alt="" width={64} height={64} />
         <div>
-          <h1 className="text-2xl font-semibold">{listing.name}</h1>
+          <h1 className="flex items-center gap-3 text-2xl font-semibold">
+            {listing.name} <SeverityBadge severity={worst} />
+          </h1>
           <p>{listing.tagline}</p>
           <p>
             {listing.developer.name ?? "Unknown developer"}
@@ -33,8 +44,11 @@ export function ListingDetail({ listing, issues }: { listing: AppListing; issues
       </header>
 
       <section>
-        <h2 className="font-semibold">Findings</h2>
-        {/* TODO: this is what the moderator came for */}
+        <h2 className="mb-1 font-semibold">Findings</h2>
+        <p className="mb-3 text-xs text-neutral-600">
+          Reviewed {new Date(reviewedAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" })}{" "}
+          UTC under Listing Requirements revision {ruleRevision}.
+        </p>
         <FindingsList issues={issues} />
       </section>
 

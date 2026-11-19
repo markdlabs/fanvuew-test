@@ -58,6 +58,12 @@ describe("moderation rules", () => {
     expect(findingsFor(padded).map((issue) => issue.rule)).toEqual(["2.3"]);
   });
 
+  it("warns, rather than blocks, on too few screenshots (2.3)", () => {
+    const single = listingWith({ previewImageUrls: [cleanListing.previewImageUrls[0]!] });
+
+    expect(findingsUnder("2.3", single).map((issue) => issue.severity)).toEqual(["warn"]);
+  });
+
   // Your tests. `npm run test:watch` reruns them as you save.
   // `spec.test.ts` says which listings must be flagged. Your tests say why.
 });
